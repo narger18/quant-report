@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QUANT REPORT · A股短线每日候选池</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.st-names{color:var(--danger, #ff2d95);font-weight:600;letter-spacing:.3px}
+:root{
+  --bg-0:#04060d; --bg-1:#070b18; --bg-2:#0a1022; --panel-border:#15203a;
+  --text-1:#dce6f7; --text-2:#8ea3c4; --text-3:#5c6f92;
+  --accent:#00f0ff; --accent-dim:rgba(0,240,255,.12);
+  --danger:#ff2d95; --danger-dim:rgba(255,45,149,.14);
+  --warn:#ffb84d; --good:#2dff9e;
+  --gold-1:#ffe08a; --gold-2:#ffd76a; --gold-3:#c98a2e;
+  --up:#ff4d6d; --down:#2dd4bf;
+  --font-title:'Orbitron',system-ui,sans-serif;
+  --font-body:'JetBrains Mono',ui-monospace,monospace;
+  --radius:12px;
+}
+body{
+  background:var(--bg-0); color:var(--text-1); font-family:var(--font-body); font-size:13px;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(0,240,255,.025) 0 1px, transparent 1px 3px),
+    radial-gradient(1200px 600px at 20% -10%, rgba(0,240,255,.06), transparent 60%),
+    radial-gradient(1000px 500px at 90% 110%, rgba(255,45,149,.05), transparent 60%);
+  background-attachment:fixed; overflow-x:hidden;
+}
+.wrap{max-width:1280px;margin:0 auto;padding:6px 22px 40px}
+header{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;padding:18px 22px 4px}
+h1{font-family:var(--font-title);font-size:25px;letter-spacing:3px;font-weight:800;
+   background:linear-gradient(100deg,var(--gold-1),var(--gold-2) 45%,var(--gold-3));
+   -webkit-background-clip:text;background-clip:text;color:transparent;
+   filter:drop-shadow(0 0 8px rgba(255,215,106,.45));
+   animation:titlePulse 2.6s ease-in-out infinite}
+@keyframes titlePulse{0%,100%{filter:drop-shadow(0 0 6px rgba(255,215,106,.35))}50%{filter:drop-shadow(0 0 16px rgba(255,215,106,.75))}}
+.subtitle{color:var(--text-2);font-size:11px;letter-spacing:1px}
+.subtitle b{color:var(--accent)}
+.status{color:var(--text-3);font-size:11px;margin-left:auto;text-align:right}
+.status .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--good);box-shadow:0 0 8px var(--good);animation:blink 1.4s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.card{background:var(--bg-1);border:1px solid var(--panel-border);border-radius:var(--radius);
+      padding:14px 16px;margin:14px 0;transition:border-color .2s,box-shadow .2s}
+.card:hover{border-color:var(--accent);box-shadow:0 0 18px var(--accent-dim)}
+.card h3{font-family:var(--font-title);font-size:12px;letter-spacing:2px;color:var(--text-2);
+         display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.card h3::before{content:'';width:4px;height:12px;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+.chart{width:100%;height:330px}
+.badge{display:inline-block;padding:3px 12px;border-radius:14px;color:#04120a;font-weight:bold;font-size:12px;vertical-align:2px}
+.b-strong{background:var(--good);box-shadow:0 0 12px rgba(45,255,158,.5)}
+.b-medium{background:var(--warn)}
+.b-weak{background:#ff9f43;color:#1a0f00}
+.b-forbidden{background:var(--danger)}
+.sig{padding:6px 10px;margin:6px 0;background:var(--bg-2);border-radius:6px;font-size:12px;border-left:3px solid var(--good)}
+.sig.hit{border-left-color:var(--danger);color:var(--danger)}
+.sig span{float:right;font-size:11px;color:var(--text-3)}
+.col{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.stat{background:var(--bg-2);border:1px solid var(--panel-border);padding:5px 13px;border-radius:8px;font-size:12px;color:var(--text-2)}
+.stat b{color:var(--accent)}
+table{border-collapse:collapse;width:100%;font-size:11.5px}
+th,td{border:1px solid var(--panel-border);padding:5px 7px;text-align:center;white-space:nowrap}
+th{background:var(--bg-2);color:var(--accent);font-family:var(--font-title);font-size:10px;letter-spacing:.5px}
+tr:hover{background:rgba(0,240,255,.05)}
+.disc{color:var(--text-3);font-size:11px;margin-top:20px;border-top:1px dashed var(--panel-border);padding-top:10px}
+.meta{color:var(--text-3);font-size:11px;margin-bottom:4px}
+</style></head><body>
+<header>
+  <h1>QUANT REPORT</h1>
+  <span class="subtitle">A股短线选股 · 每日候选池 <span class="badge b-medium">谨慎偏多</span></span>
+  <div class="status"><span class="dot"></span> 策略：<b>v3主板半涨停·隔夜策略（6年回测验证，夏普25.31）</b></div>
+</header>
+<div class="wrap">
+<div class="meta">日期 2026-09-03（交易日 20260903）｜生成 2026-09-03 16:32:03｜数据源：同花顺+腾讯+新浪+东财（免费）｜买入窗口 14:50-15:00</div>
+
+<div class="card">
+<h3>模拟交易记录 · 真实每日选股（自20260901起 · 14:50-15:00 可买性校验）</h3>
+<div class="meta">真实每日选股模拟盘 ｜ 自 20260901 起 ｜ 最新报告 20260903 ｜ v3主板半涨停：主板4-5%涨幅+多因子Top2 ｜ 每只投入 50.0% ｜ 含佣金(万2.5,最低5元)+印花税(卖0.05%) ｜ D尾盘收盘价买入，D+1开盘卖（低开&gt;1%持有到收盘）</div>
+<div class="col"><span class="stat">期初 <b>¥1,000,000</b></span><span class="stat">当前权益 <b>¥978,934</b></span><span class="stat">总收益 <b style="color:#2dd4bf;font-weight:700">-2.11%</b></span><span class="stat">已实现 <b style="color:#2dd4bf;font-weight:700">-2.08%</b></span><span class="stat">已了结 <b>4</b> 笔</span><span class="stat">持仓中 <b>2</b> 笔</span><span class="stat">胜率 <b>0.00%</b></span><span class="stat">最大回撤 <b style="color:#ff2d95;font-weight:700">2.11%</b></span></div>
+<div id="ch0" class="chart" style="height:240px"></div>
+<div class="meta" style="margin-top:8px">每笔盈亏 = (卖出收盘价 - 买入价)×股数 - 费用 ｜ 红涨绿跌（A股配色）｜ 持仓中按买入成本计权益，待次日收盘结算 ｜ 共 6 笔（已了结 4 / 持仓 2）</div>
+<table><thead><tr><th>状态</th><th>买入日</th><th>代码</th><th>名称</th><th>连板</th><th>买入价(14:50实际)</th><th>卖出日</th><th>卖出价(收盘)</th><th>盈亏(元)</th><th>盈亏%</th><th>累计权益</th></tr></thead><tbody><tr><td style='color:#2dff9e'>已了结</td><td>20260901</td><td>605166.SH</td><td>聚合顺</td><td>-</td><td>9.020</td><td>20260902</td><td>8.960</td><td style="color:#2dd4bf;font-weight:700">-3821</td><td style="color:#2dd4bf;font-weight:700">-0.76%</td><td>984,446</td></tr>
+<tr><td style='color:#2dff9e'>已了结</td><td>20260901</td><td>002212.SZ</td><td>天融信</td><td>-</td><td>6.820</td><td>20260902</td><td>6.670</td><td style="color:#2dd4bf;font-weight:700">-11487</td><td style="color:#2dd4bf;font-weight:700">-2.30%</td><td>984,446</td></tr>
+<tr><td style='color:#2dff9e'>已了结</td><td>20260902</td><td>603839.SH</td><td>安正时尚</td><td>-</td><td>7.220</td><td>20260903</td><td>7.220</td><td style="color:#2dd4bf;font-weight:700">-492</td><td style="color:#2dd4bf;font-weight:700">-0.10%</td><td>978,934</td></tr>
+<tr><td style='color:#2dff9e'>已了结</td><td>20260902</td><td>000608.SZ</td><td>阳光股份</td><td>-</td><td>7.590</td><td>20260903</td><td>7.520</td><td style="color:#2dd4bf;font-weight:700">-5024</td><td style="color:#2dd4bf;font-weight:700">-1.02%</td><td>978,934</td></tr>
+<tr><td style='color:#ffb84d'>持仓中</td><td>20260903</td><td>601083.SH</td><td>锦江航运</td><td>-</td><td>13.000</td><td>待次日收盘</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+<tr><td style='color:#ffb84d'>持仓中</td><td>20260903</td><td>002975.SZ</td><td>博杰股份</td><td>-</td><td>102.280</td><td>待次日收盘</td><td>-</td><td>-</td><td>-</td><td>-</td></tr></tbody></table>
+</div>
+
+<div class="card"><h3>已了结逐笔收益分布</h3><div class="meta">红涨绿跌（A股配色）｜ 仅统计已了结交易，持仓中按买入成本计权益待结算</div><div id="ch5" class="chart" style="height:230px"></div></div>
+
+<div class="card">
+<h3>大盘情绪开关：大盘20日涨幅4.0%&gt;0.0% 且 波动率21.0%&lt;25.0%（通过）</h3>
+<div class='sig hit'><b>大盘20日累计涨幅</b> <span>⚠ 触发</span></div><div class='sig hit'><b>大盘20日年化波动率</b> <span>⚠ 触发</span></div>
+<div class="col">
+  <span class="stat">单票上限 <b>20%</b></span>
+  <span class="stat">总仓上限 <b>70%</b></span>
+  <span class="stat">最多 <b>3</b> 只</span>
+  <span class="stat"><b>可追高度板</b></span>
+</div>
+</div>
+
+<div class="grid2">
+ <div class="card"><h3>Top2 综合得分构成</h3><div id="ch1" class="chart"></div></div>
+ <div class="card"><h3>候选池题材分布</h3><div id="ch2" class="chart"></div></div>
+</div>
+<div class="card"><h3>大盘情绪信号（红线=阈值）</h3><div id="ch3" class="chart" style="height:260px"></div></div>
+
+<div class="card">
+<h3>Top2 尾盘买入备选（D尾盘买 → D+1开盘卖（低开>1%持有到收盘））</h3>
+<div class="meta">买入窗口 14:50-15:00｜盘中实时选股 · 14:55前输出 ｜ v3半涨停：主板4-5%涨幅+多因子排序+Top2 ｜ 大盘过滤：<b style='color:#2dff9e'>大盘20日涨幅4.0%>0.0% 且 波动率21.0%<25.0%（通过）</b> ｜ 已剔除ST/风险股 <b style='color:#ff2d95'>3</b>只：<span class='st-names'>ST云网、ST天际、*ST亚士</span> ｜ 数据源: 实时快照+腾讯名称 ｜ D尾盘买入，D+1开盘卖（低开>1%持有到收盘）</div>
+<table><thead><tr><th>排名</th><th>代码</th><th>名称</th><th>涨幅%</th><th>收盘价</th><th>评分</th><th>涨幅因子</th><th>成交额因子</th><th>振幅因子</th><th>振幅%</th><th>成交额(亿)</th><th>可买性</th><th>操作建议</th></tr></thead><tbody>
+<tr><td>1</td><td>601083.SH</td><td>锦江航运</td><td>4.92</td><td>13.00</td><td>3.85</td><td>9.84</td><td>-4.23</td><td>-1.77</td><td>5.89</td><td>2.84</td><td>可买@13.00</td><td>D尾盘买入（13.0元），D+1开盘卖；低开&gt;1%持有到收盘</td></tr>
+<tr><td>2</td><td>002975.SZ</td><td>博杰股份</td><td>4.98</td><td>102.28</td><td>3.53</td><td>9.96</td><td>-4.59</td><td>-1.85</td><td>6.16</td><td>14.86</td><td>可买@102.28</td><td>D尾盘买入（102.28元），D+1开盘卖；低开&gt;1%持有到收盘</td></tr>
+</tbody></table>
+</div>
+
+<div class="card">
+<h3>涨停观察（一字板/未进Top5，次日竞价参考）</h3>
+<div class='meta'>v3半涨停策略无涨停观察名单（不追涨停板，仅主板4-5%涨幅候选）</div>
+</div>
+
+<div class="card">
+<h3>完整候选池（按评分排序）</h3>
+<table><thead><tr><th>排名</th><th>代码</th><th>名称</th><th>涨幅%</th><th>收盘价</th><th>评分</th><th>涨幅因子</th><th>成交额因子</th><th>振幅因子</th><th>振幅%</th><th>成交额(亿)</th></tr></thead><tbody>
+<tr><td>1</td><td>601083.SH</td><td>锦江航运</td><td>4.92</td><td>13.00</td><td>3.85</td><td>9.84</td><td>-4.23</td><td>-1.77</td><td>5.89</td><td>2.84</td></tr>
+<tr><td>2</td><td>002975.SZ</td><td>博杰股份</td><td>4.98</td><td>102.28</td><td>3.53</td><td>9.96</td><td>-4.59</td><td>-1.85</td><td>6.16</td><td>14.86</td></tr>
+<tr><td>3</td><td>603380.SH</td><td>易德龙</td><td>4.42</td><td>35.19</td><td>3.21</td><td>8.84</td><td>-4.20</td><td>-1.43</td><td>4.75</td><td>2.56</td></tr>
+<tr><td>4</td><td>002174.SZ</td><td>游族网络</td><td>4.82</td><td>12.18</td><td>3.21</td><td>9.64</td><td>-4.39</td><td>-2.04</td><td>6.80</td><td>6.05</td></tr>
+<tr><td>5</td><td>603906.SH</td><td>龙蟠科技</td><td>4.94</td><td>19.54</td><td>3.14</td><td>9.88</td><td>-4.36</td><td>-2.38</td><td>7.95</td><td>5.20</td></tr>
+<tr><td>6</td><td>601975.SH</td><td>招商南油</td><td>4.90</td><td>4.28</td><td>3.08</td><td>9.80</td><td>-4.52</td><td>-2.21</td><td>7.35</td><td>10.79</td></tr>
+<tr><td>7</td><td>002850.SZ</td><td>科达利</td><td>4.32</td><td>174.63</td><td>3.08</td><td>8.64</td><td>-4.37</td><td>-1.20</td><td>4.00</td><td>5.37</td></tr>
+<tr><td>8</td><td>605277.SH</td><td>新亚电子</td><td>4.69</td><td>18.32</td><td>3.01</td><td>9.38</td><td>-4.36</td><td>-2.01</td><td>6.69</td><td>5.33</td></tr>
+<tr><td>9</td><td>000070.SZ</td><td>特发信息</td><td>4.76</td><td>16.28</td><td>2.77</td><td>9.52</td><td>-4.54</td><td>-2.20</td><td>7.34</td><td>12.18</td></tr>
+<tr><td>10</td><td>603105.SH</td><td>芯能科技</td><td>4.25</td><td>8.09</td><td>2.71</td><td>8.50</td><td>-4.21</td><td>-1.58</td><td>5.28</td><td>2.59</td></tr>
+</tbody></table>
+</div>
+
+<div class="disc">本工具基于公开数据+量化规则生成候选池，仅供研究参考，不构成投资建议。短线交易高风险，请务必遵守止损与仓位纪律。历史回测不代表未来表现。</div>
+</div>
+<script>
+const charts = {};
+charts.ch0 = echarts.init(document.getElementById('ch0'));
+charts.ch0.setOption({"backgroundColor": "transparent", "title": {"text": "总资金曲线（初始 ¥1,000,000）", "left": "center", "textStyle": {"color": "#dce6f7", "fontSize": 13}}, "tooltip": {"trigger": "axis", "triggerOn": "click", "renderMode": "richText", "confine": true, "backgroundColor": "rgba(7,11,24,.92)", "borderColor": "#15203a", "textStyle": {"color": "#dce6f7", "fontSize": 11}}, "grid": {"left": 80, "right": 20, "top": 42, "bottom": 30, "containLabel": true}, "xAxis": {"type": "category", "data": ["期初", "09-01", "09-02", "09-03"], "boundaryGap": false, "axisLabel": {"color": "#8ea3c4", "fontSize": 9, "hideOverlap": true}, "axisLine": {"lineStyle": {"color": "#15203a"}}}, "yAxis": {"type": "value", "scale": true, "axisLabel": {"color": "#8ea3c4", "fontSize": 10}, "splitLine": {"lineStyle": {"color": "rgba(21,32,58,.6)"}}}, "series": [{"name": "总资金", "type": "line", "data": [1000000.0, 999750.1, 984446.25, 978933.63], "smooth": true, "symbol": "circle", "symbolSize": 5, "lineStyle": {"color": "#00f0ff", "width": 2}, "itemStyle": {"color": "#00f0ff"}, "areaStyle": {"color": "rgba(0,240,255,.12)"}, "markLine": {"symbol": "none", "data": [{"yAxis": 1000000.0, "name": "初始资金"}], "lineStyle": {"color": "#ff2d95", "type": "dashed"}, "label": {"color": "#ff2d95", "fontSize": 9, "formatter": "初始¥1,000,000"}}}]});
+charts.ch1 = echarts.init(document.getElementById('ch1'));
+charts.ch1.setOption({"backgroundColor": "transparent", "title": {"text": "Top2 多因子评分构成（v3半涨停策略）", "left": "center", "textStyle": {"color": "#dce6f7", "fontSize": 13}}, "tooltip": {"trigger": "axis", "triggerOn": "click", "renderMode": "richText", "confine": true, "backgroundColor": "rgba(7,11,24,.92)", "borderColor": "#15203a", "textStyle": {"color": "#dce6f7", "fontSize": 11}}, "legend": {"data": ["涨幅因子", "成交额因子", "振幅因子"], "bottom": 0, "textStyle": {"color": "#8ea3c4", "fontSize": 10}}, "grid": {"left": 50, "right": 16, "top": 42, "bottom": 56, "containLabel": true}, "xAxis": {"type": "category", "data": ["锦江航运(601083)", "博杰股份(002975)"], "axisLabel": {"color": "#8ea3c4", "fontSize": 9, "rotate": 18, "hideOverlap": true}, "axisLine": {"lineStyle": {"color": "#15203a"}}}, "yAxis": {"type": "value", "axisLabel": {"color": "#8ea3c4", "fontSize": 10}, "splitLine": {"lineStyle": {"color": "rgba(21,32,58,.6)"}}}, "series": [{"name": "涨幅因子", "type": "bar", "stack": "total", "data": [9.84, 9.96], "itemStyle": {"color": "#ff4d6d"}}, {"name": "成交额因子", "type": "bar", "stack": "total", "data": [-4.23, -4.59], "itemStyle": {"color": "#2dff9e"}}, {"name": "振幅因子", "type": "bar", "stack": "total", "data": [-1.77, -1.85], "itemStyle": {"color": "#00a3ff"}}]});
+charts.ch2 = echarts.init(document.getElementById('ch2'));
+charts.ch2.setOption({"backgroundColor": "transparent", "title": {"text": "候选池涨幅分布（主板4-5%半涨停）", "left": "center", "textStyle": {"color": "#dce6f7", "fontSize": 13}}, "tooltip": {"trigger": "item", "triggerOn": "click", "renderMode": "richText", "confine": true, "backgroundColor": "rgba(7,11,24,.92)", "borderColor": "#15203a", "textStyle": {"color": "#dce6f7", "fontSize": 11}}, "legend": {"bottom": 0, "type": "scroll", "textStyle": {"color": "#8ea3c4", "fontSize": 10}}, "series": [{"name": "涨幅区间", "type": "pie", "radius": ["35%", "62%"], "data": [{"name": "4.2-4.4%", "value": 2}, {"name": "4.4-4.6%", "value": 1}, {"name": "4.6-4.8%", "value": 2}, {"name": "4.8-5.0%", "value": 5}], "label": {"formatter": "{b}: {c}", "color": "#8ea3c4", "fontSize": 10}, "itemStyle": {"borderColor": "#04060d", "borderWidth": 2}}]});
+charts.ch3 = echarts.init(document.getElementById('ch3'));
+charts.ch3.setOption({"backgroundColor": "transparent", "title": {"text": "大盘情绪信号（红线=阈值）", "left": "center", "textStyle": {"color": "#dce6f7", "fontSize": 13}}, "tooltip": {"trigger": "axis", "triggerOn": "click", "renderMode": "richText", "confine": true, "backgroundColor": "rgba(7,11,24,.92)", "borderColor": "#15203a", "textStyle": {"color": "#dce6f7", "fontSize": 11}}, "grid": {"left": 50, "right": 16, "top": 42, "bottom": 34, "containLabel": true}, "xAxis": {"type": "category", "data": ["大盘20日累计涨幅", "大盘20日年化波动率"], "axisLabel": {"color": "#8ea3c4", "fontSize": 9, "hideOverlap": true}, "axisLine": {"lineStyle": {"color": "#15203a"}}}, "yAxis": {"type": "value", "axisLabel": {"color": "#8ea3c4", "fontSize": 10}, "splitLine": {"lineStyle": {"color": "rgba(21,32,58,.6)"}}}, "series": [{"name": "当前值", "type": "bar", "data": [4.0, 21.0], "itemStyle": {"color": "#00f0ff"}, "markLine": {"data": [{"type": "average", "name": "avg"}], "lineStyle": {"color": "#ff2d95", "type": "dashed"}, "label": {"color": "#ff2d95", "fontSize": 9}}}]});
+charts.ch5 = echarts.init(document.getElementById('ch5'));
+charts.ch5.setOption({"backgroundColor": "transparent", "title": {"text": "已了结逐笔收益分布（红涨绿跌）", "left": "center", "textStyle": {"color": "#dce6f7", "fontSize": 13}}, "tooltip": {"trigger": "axis", "triggerOn": "click", "renderMode": "richText", "confine": true, "backgroundColor": "rgba(7,11,24,.92)", "borderColor": "#15203a", "textStyle": {"color": "#dce6f7", "fontSize": 11}}, "grid": {"left": 54, "right": 16, "top": 42, "bottom": 40, "containLabel": true}, "xAxis": {"type": "category", "data": ["09-01 聚合顺", "09-01 天融信", "09-02 安正时尚", "09-02 阳光股份"], "axisLabel": {"color": "#8ea3c4", "fontSize": 9, "rotate": 20, "hideOverlap": true}, "axisLine": {"lineStyle": {"color": "#15203a"}}}, "yAxis": {"type": "value", "name": "收益%", "nameTextStyle": {"color": "#8ea3c4"}, "axisLabel": {"color": "#8ea3c4", "fontSize": 10}, "splitLine": {"lineStyle": {"color": "rgba(21,32,58,.6)"}}}, "series": [{"name": "单笔收益%", "type": "bar", "data": [-0.76, -2.3, -0.1, -1.02], "itemStyle": {"color": "#00f0ff"}, "label": {"show": true, "position": "top", "color": "#8ea3c4", "fontSize": 9, "formatter": "{c}%"}, "markLine": {"symbol": "none", "data": [{"yAxis": 0, "name": "零轴"}], "lineStyle": {"color": "#5c6f92", "type": "dashed"}}}]});
+window.addEventListener('resize', function(){ Object.values(charts).forEach(function(c){ c.resize(); }); });
+</script>
+</body></html>
